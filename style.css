@@ -420,3 +420,8 @@ body {
   padding: 36px;
   border: 1px solid var(--border-default);
 }
+
+/* Readonly Mode */
+.readonly-mode .hide-in-readonly {
+  display: none !important;
+}

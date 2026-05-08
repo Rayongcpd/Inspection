@@ -251,9 +251,12 @@ function renderCooperatives() {
       '<td><span class="badge ' + (c.status === 'active' ? 'status-passed' : 'status-draft') + '">' + escapeHtml(c.status || '') + '</span></td>' +
       '<td>';
     if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'inspector')) {
-      html += '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="editCooperative(\'' + escapeHtml(c.id || '') + '\')">แก้ไข</button>' +
-      '<button class="text-slate-700 text-sm hover:underline" onclick="deleteCooperativeConfirm(\'' + escapeHtml(c.id || '') + '\')">ลบ</button>';
-    } else {
+      html += '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="editCooperative(\'' + escapeHtml(c.id || '') + '\')">แก้ไข</button>';
+    }
+    if (currentUser && currentUser.role === 'admin') {
+      html += '<button class="text-red-500 text-sm hover:underline" onclick="deleteCooperativeConfirm(\'' + escapeHtml(c.id || '') + '\')">ลบ</button>';
+    }
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'inspector')) {
       html += '<span class="text-xs text-gray-400">-</span>';
     }
     html += '</td></tr>';
@@ -366,8 +369,10 @@ function renderInspections() {
       '<td>' +
       '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="viewInspection(\'' + escapeHtml(item.id || '') + '\')">ดู</button>';
     if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'inspector')) {
-      html += '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="editInspection(\'' + escapeHtml(item.id || '') + '\')">แก้ไข</button>' +
-      '<button class="text-slate-700 text-sm hover:underline" onclick="deleteInspectionConfirm(\'' + escapeHtml(item.id || '') + '\')">ลบ</button>';
+      html += '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="editInspection(\'' + escapeHtml(item.id || '') + '\')">แก้ไข</button>';
+    }
+    if (currentUser && currentUser.role === 'admin') {
+      html += '<button class="text-red-500 text-sm hover:underline" onclick="deleteInspectionConfirm(\'' + escapeHtml(item.id || '') + '\')">ลบ</button>';
     }
     html += '</td></tr>';
   });
@@ -447,10 +452,11 @@ function populateInspectionForm(res, readonly) {
   ['insp-coop-select','insp-date','insp-status','insp-overall','insp-findings','insp-recommendations']
     .forEach(function(id) { var el = document.getElementById(id); if (el) el.disabled = isRead; });
     
-  var dropzone = document.querySelector('.dropzone');
-  if (dropzone) dropzone.style.display = isRead ? 'none' : 'block';
-  var saveBtn = document.querySelector('button[onclick="saveInspection()"]');
-  if (saveBtn) saveBtn.style.display = isRead ? 'none' : 'block';
+  var formPage = document.getElementById('inspection-form-page');
+  if (formPage) {
+    if (isRead) formPage.classList.add('readonly-mode');
+    else formPage.classList.remove('readonly-mode');
+  }
 }
 
 function loadCooperativeSelect(selectedId) {
@@ -699,7 +705,7 @@ function renderPendingAttachments() {
       '<div class="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center border-2 border-dashed border-slate-200">' +
       '<svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>' +
       '</div>' +
-      '<button onclick="removePendingUpload(' + idx + ')" class="absolute -top-1 -right-1 w-5 h-5 bg-slate-500 text-white rounded-full text-xs flex items-center justify-center shadow">&times;</button>' +
+      '<button onclick="removePendingUpload(' + idx + ')" class="absolute -top-1 -right-1 w-5 h-5 bg-slate-500 text-white rounded-full text-xs flex items-center justify-center shadow hide-in-readonly">&times;</button>' +
       '<div class="text-[10px] text-gray-500 mt-1 w-24 truncate">' + escapeHtml(p.name) + '</div>' +
       '</div>';
   });
