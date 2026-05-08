@@ -413,7 +413,7 @@ function openInspectionForm() {
     document.getElementById('insp-inspector-name').value = currentUser.name || '';
   }
   loadCooperativeSelect();
-  loadCriteriaTabsAndForms(null);
+  loadCriteriaTabsAndForms(null, false);
   renderAttachments();
   navigateTo('inspection-form');
 }
@@ -439,13 +439,18 @@ function populateInspectionForm(res, readonly) {
   document.getElementById('insp-inspector-name').value = insp.inspectorName || '';
 
   loadCooperativeSelect(insp.cooperativeId);
-  loadCriteriaTabsAndForms(res.results || []);
+  var isRead = !!readonly;
+  loadCriteriaTabsAndForms(res.results || [], isRead);
   currentAttachments = res.attachments || [];
   renderAttachments();
 
-  var isRead = !!readonly;
   ['insp-coop-select','insp-date','insp-status','insp-overall','insp-findings','insp-recommendations']
     .forEach(function(id) { var el = document.getElementById(id); if (el) el.disabled = isRead; });
+    
+  var dropzone = document.querySelector('.dropzone');
+  if (dropzone) dropzone.style.display = isRead ? 'none' : 'block';
+  var saveBtn = document.querySelector('button[onclick="saveInspection()"]');
+  if (saveBtn) saveBtn.style.display = isRead ? 'none' : 'block';
 }
 
 function loadCooperativeSelect(selectedId) {
@@ -483,22 +488,22 @@ function updateCoopName() {
 }
 
 // --- Criteria Tabs & Forms ---
-function loadCriteriaTabsAndForms(results) {
+function loadCriteriaTabsAndForms(results, readonly) {
   if (!criteriaList || criteriaList.length === 0) {
     callApi('getCriteriaList', {})
       .then(function(res) {
         if (res && res.success && res.criteria) {
           criteriaList = res.criteria;
-          buildCriteriaUI(results || []);
+          buildCriteriaUI(results || [], readonly);
         }
       })
       .catch(function(err) {});
   } else {
-    buildCriteriaUI(results || []);
+    buildCriteriaUI(results || [], readonly);
   }
 }
 
-function buildCriteriaUI(results) {
+function buildCriteriaUI(results, readonly) {
   var tabsContainer = document.getElementById('criteria-tabs');
   var contentContainer = document.getElementById('criteria-content');
   if (!tabsContainer || !contentContainer) return;
@@ -525,19 +530,19 @@ function buildCriteriaUI(results) {
       '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">' +
       '<div class="md:col-span-2">' +
       '<label class="pastel-label">ข้อเท็จจริงที่ตรวจพบ</label>' +
-      '<textarea id="crit-findings-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="สรุปข้อเท็จจริง...">' + escapeHtml(r.findings || '') + '</textarea>' +
+      '<textarea id="crit-findings-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="สรุปข้อเท็จจริง..."' + (readonly ? ' disabled' : '') + '>' + escapeHtml(r.findings || '') + '</textarea>' +
       '</div>' +
       '<div class="md:col-span-2">' +
       '<label class="pastel-label">ข้อเสนอความเห็น / วิธีการแก้ไข</label>' +
-      '<textarea id="crit-recs-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="เสนอแนะและวิธีแก้ไข...">' + escapeHtml(r.recommendations || '') + '</textarea>' +
+      '<textarea id="crit-recs-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="เสนอแนะและวิธีแก้ไข..."' + (readonly ? ' disabled' : '') + '>' + escapeHtml(r.recommendations || '') + '</textarea>' +
       '</div>' +
       '<div>' +
       '<label class="pastel-label">ระยะเวลาที่ควรให้แก้ไข (วัน)</label>' +
-      '<input type="number" id="crit-deadline-' + c.no + '" class="pastel-input w-full" value="' + escapeHtml(r.deadlineDays || '') + '">' +
+      '<input type="number" id="crit-deadline-' + c.no + '" class="pastel-input w-full" value="' + escapeHtml(r.deadlineDays || '') + '"' + (readonly ? ' disabled' : '') + '>' +
       '</div>' +
       '<div>' +
       '<label class="pastel-label">ระดับความเสี่ยง</label>' +
-      '<select id="crit-risk-' + c.no + '" class="pastel-input w-full">' +
+      '<select id="crit-risk-' + c.no + '" class="pastel-input w-full"' + (readonly ? ' disabled' : '') + '>' +
       '<option value="low" ' + (r.riskLevel === 'low' ? 'selected' : '') + '>ต่ำ (Low)</option>' +
       '<option value="medium" ' + (r.riskLevel === 'medium' ? 'selected' : '') + '>ปานกลาง (Medium)</option>' +
       '<option value="high" ' + (r.riskLevel === 'high' ? 'selected' : '') + '>สูง (High)</option>' +
@@ -545,7 +550,7 @@ function buildCriteriaUI(results) {
       '</div>' +
       '<div>' +
       '<label class="pastel-label">สถานะ</label>' +
-      '<select id="crit-status-' + c.no + '" class="pastel-input w-full">' +
+      '<select id="crit-status-' + c.no + '" class="pastel-input w-full"' + (readonly ? ' disabled' : '') + '>' +
       '<option value="pending" ' + (r.status === 'pending' ? 'selected' : '') + '>รอดำเนินการ</option>' +
       '<option value="passed" ' + (r.status === 'passed' ? 'selected' : '') + '>ผ่าน</option>' +
       '<option value="issue" ' + (r.status === 'issue' ? 'selected' : '') + '>พบปัญหา</option>' +
