@@ -15,7 +15,7 @@ function callApi(action, payload) {
     method: 'POST',
     redirect: 'follow',
     body: JSON.stringify(bodyObj),
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
   }).then(function(response) {
     if (!response.ok) throw new Error('HTTP ' + response.status);
     return response.json();
