@@ -37,6 +37,7 @@ var pendingUploads = [];
 
 // --- Init ---
 document.addEventListener('DOMContentLoaded', function() {
+  navigateTo('landing');
   loadLandingStats();
   document.getElementById('insp-date').valueAsDate = new Date();
 });
