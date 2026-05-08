@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ระบบตรวจการสหกรณ์</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Loader -->
+  <div class="loader-overlay" id="loader">
+    <div class="loader-spinner"></div>
+    <div class="loader-text">กำลังโหลด...</div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Logout Modal -->
+  <div class="modal-overlay" id="logout-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="text-lg font-semibold text-gray-800">ยืนยันการออกจากระบบ</h3>
+      </div>
+      <div class="modal-body">
+        <p class="text-sm text-gray-600">คุณต้องการออกจากระบบใช่หรือไม่?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-slate px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-slate-500" onclick="closeModal('logout-modal')">ยกเลิก</button>
+        <button class="btn-slate btn-red px-4 py-2 text-sm rounded-lg" onclick="confirmLogout()">ออกจากระบบ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar (Desktop) -->
+  <nav class="sidebar desktop-only" id="sidebar">
+    <div class="sidebar-brand">ระบบตรวจการสหกรณ์</div>
+    <div class="sidebar-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>แดชบอร์ด</span>
+    </div>
+    <div class="sidebar-item" data-page="inspection-list" onclick="navigateTo('inspection-list')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <span>รายการตรวจสอบ</span>
+    </div>
+    <div class="sidebar-item" data-page="cooperative-list" onclick="navigateTo('cooperative-list')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      <span>สหกรณ์</span>
+    </div>
+    <div class="sidebar-item" data-page="report-page" onclick="navigateTo('report-page')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <span>รายงาน</span>
+    </div>
+    <div class="mt-4 pt-4 border-t border-slate-200 admin-only">
+      <div class="text-xs font-semibold text-gray-400 mb-2 px-2">ผู้ดูแลระบบ</div>
+      <div class="sidebar-item" data-page="admin-users" onclick="navigateTo('admin-users')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <span>จัดการผู้ใช้</span>
+      </div>
+      <div class="sidebar-item" data-page="admin-settings" onclick="navigateTo('admin-settings')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>ตั้งค่าระบบ</span>
+      </div>
+    </div>
+    <div class="mt-auto pt-6">
+      <div class="sidebar-item" onclick="showLogoutModal()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <span>ออกจากระบบ</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Bottom Nav (Mobile) -->
+  <nav class="bottom-nav mobile-only auth-show-flex" id="bottom-nav" style="display:none;">
+    <div class="bottom-nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>หน้าแรก</span>
+    </div>
+    <div class="bottom-nav-item" data-page="inspection-list" onclick="navigateTo('inspection-list')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <span>ตรวจสอบ</span>
+    </div>
+    <div class="bottom-nav-item" data-page="cooperative-list" onclick="navigateTo('cooperative-list')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      <span>สหกรณ์</span>
+    </div>
+    <div class="bottom-nav-item" data-page="report-page" onclick="navigateTo('report-page')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <span>รายงาน</span>
+    </div>
+    <div class="bottom-nav-item admin-only" onclick="toggleAdminPanel()">
+      <div class="admin-center-btn">
+        <svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24" style="width:24px;height:24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Admin Panel (Mobile) -->
+  <div class="admin-panel-overlay mobile-only" id="admin-panel-overlay" onclick="toggleAdminPanel()">
+    <div class="admin-panel" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-semibold text-gray-800">เมนูผู้ดูแลระบบ</h3>
+        <button class="p-1 rounded-lg hover:bg-gray-100" onclick="toggleAdminPanel()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="w-5 h-5 text-gray-500"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="admin-panel-grid">
+        <div class="admin-panel-item" onclick="toggleAdminPanel(); navigateTo('admin-users')">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <span>ผู้ใช้</span>
+        </div>
+        <div class="admin-panel-item" onclick="toggleAdminPanel(); navigateTo('admin-settings')">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span>ตั้งค่า</span>
+        </div>
+        <div class="admin-panel-item" onclick="toggleAdminPanel(); showLogoutModal()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          <span>ออก</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main-content" id="main-content">
+
+    <!-- ==================== LANDING PAGE ==================== -->
+    <section class="page-section active" id="landing-page">
+      <div class="landing-hero">
+        <div class="mb-6">
+          <svg class="w-20 h-20 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V15a2.25 2.25 0 002.25 2.25h.75m-5.801 0h3.751M19.5 15h.75M3 12h.75m15 0h.75M12 3v.75m0 15v.75"/></svg>
+        </div>
+        <h1>ระบบตรวจการสหกรณ์</h1>
+        <p>ตรวจสอบกิจการและฐานะการเงินของสหกรณ์ ครอบคลุม 19 หัวข้อการตรวจสอบ ตามระเบียบและข้อบังคับ</p>
+
+        <!-- Landing Stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8 w-full max-w-lg">
+          <div class="pastel-card p-4 text-center">
+            <div class="text-2xl font-bold text-slate-700" id="land-stat-coop">0</div>
+            <div class="text-xs text-gray-500 mt-1">สหกรณ์</div>
+          </div>
+          <div class="pastel-card p-4 text-center">
+            <div class="text-2xl font-bold text-slate-700" id="land-stat-insp">0</div>
+            <div class="text-xs text-gray-500 mt-1">ตรวจสอบ</div>
+          </div>
+          <div class="pastel-card p-4 text-center">
+            <div class="text-2xl font-bold text-slate-700" id="land-stat-issue">0</div>
+            <div class="text-xs text-gray-500 mt-1">ข้อบกพร่อง</div>
+          </div>
+        </div>
+
+        <button class="btn-pastel btn-blue px-8 py-3 text-base font-medium" onclick="navigateTo('login')">
+          เข้าสู่ระบบ
+        </button>
+        <div class="mt-3 text-sm text-gray-400">Version 1.0.0</div>
+      </div>
+    </section>
+
+    <!-- ==================== LOGIN PAGE ==================== -->
+    <section class="page-section" id="login-page">
+      <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="login-card">
+          <div class="text-center mb-6">
+            <div class="w-14 h-14 mx-auto bg-slate-100 rounded-2xl flex items-center justify-center mb-3 shadow-sm">
+              <svg class="w-7 h-7 text-slate-800" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+            </div>
+            <h2 class="text-xl font-bold text-gray-800">เข้าสู่ระบบ</h2>
+            <p class="text-sm text-gray-500 mt-1">ระบบตรวจการสหกรณ์</p>
+          </div>
+          <form onsubmit="event.preventDefault(); handleLogin();">
+            <div class="mb-4">
+              <label class="pastel-label">ชื่อผู้ใช้</label>
+              <input type="text" id="login-username" class="pastel-input w-full" placeholder="ชื่อผู้ใช้" value="admin" required>
+            </div>
+            <div class="mb-6">
+              <label class="pastel-label">รหัสผ่าน</label>
+              <input type="password" id="login-password" class="pastel-input w-full" placeholder="รหัสผ่าน" value="admin123" required>
+            </div>
+            <button type="submit" class="btn-pastel btn-blue w-full py-2.5 text-sm font-medium">เข้าสู่ระบบ</button>
+          </form>
+          <div class="mt-4 text-center">
+            <button class="text-sm text-gray-400 hover:text-slate-700 transition" onclick="navigateTo('landing')">กลับหน้าแรก</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <section class="page-section" id="dashboard-page">
+      <div class="mb-6">
+        <h1 class="text-xl font-bold text-gray-800">แดชบอร์ด</h1>
+        <p class="text-sm text-gray-500">สรุปภาพรวมการตรวจสอบสหกรณ์</p>
+      </div>
+      <div class="stats-grid mb-6">
+        <div class="pastel-card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-gray-500">สหกรณ์ทั้งหมด</span>
+            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><svg class="w-4 h-4 text-slate-800" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
+          </div>
+          <div class="text-2xl font-bold text-gray-800" id="dash-coop">0</div>
+        </div>
+        <div class="pastel-card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-gray-500">รายการตรวจสอบ</span>
+            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><svg class="w-4 h-4 text-slate-800" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+          </div>
+          <div class="text-2xl font-bold text-gray-800" id="dash-insp">0</div>
+        </div>
+        <div class="pastel-card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-gray-500">ตรวจเสร็จแล้ว</span>
+            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+          </div>
+          <div class="text-2xl font-bold text-slate-700" id="dash-completed">0</div>
+        </div>
+        <div class="pastel-card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-gray-500">ร่าง</span>
+            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
+          </div>
+          <div class="text-2xl font-bold text-slate-700" id="dash-draft">0</div>
+        </div>
+        <div class="pastel-card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-gray-500">ข้อบกพร่อง</span>
+            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg></div>
+          </div>
+          <div class="text-2xl font-bold text-slate-700" id="dash-issue">0</div>
+        </div>
+        <div class="pastel-card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs text-gray-500">ความเสี่ยงสูง</span>
+            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1.99-8.25 2.625V12z"/></svg></div>
+          </div>
+          <div class="text-2xl font-bold text-slate-700" id="dash-high">0</div>
+        </div>
+      </div>
+      <div class="pastel-card p-5 mb-6">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-semibold text-gray-800">รายการตรวจสอบล่าสุด</h3>
+          <button class="text-sm text-slate-700 hover:text-slate-900" onclick="navigateTo('inspection-list')">ดูทั้งหมด</button>
+        </div>
+        <div id="dash-recent-list" class="space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- ==================== INSPECTION LIST ==================== -->
+    <section class="page-section" id="inspection-list-page">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">รายการตรวจสอบ</h1>
+          <p class="text-sm text-gray-500">จัดการรายการตรวจสอบกิจการและฐานะการเงิน</p>
+        </div>
+        <button class="btn-pastel btn-blue px-4 py-2 text-sm" onclick="openInspectionForm()">+ สร้างใหม่</button>
+      </div>
+      <div class="pastel-card overflow-x-auto">
+        <table class="pastel-table min-w-[700px]">
+          <thead>
+            <tr>
+              <th>เลขที่</th>
+              <th>สหกรณ์</th>
+              <th>วันที่ตรวจ</th>
+              <th>ผู้ตรวจ</th>
+              <th>สถานะ</th>
+              <th>ผลสรุป</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="inspection-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== INSPECTION FORM ==================== -->
+    <section class="page-section" id="inspection-form-page">
+      <div class="flex items-center gap-2 mb-4">
+        <button class="p-2 rounded-lg hover:bg-gray-100" onclick="navigateTo('inspection-list')"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg></button>
+        <h1 class="text-xl font-bold text-gray-800" id="insp-form-title">สร้างรายการตรวจสอบใหม่</h1>
+      </div>
+
+      <!-- Header Info -->
+      <div class="pastel-card p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="pastel-label">สหกรณ์</label>
+          <select id="insp-coop-select" class="pastel-input w-full" onchange="updateCoopName()">
+            <option value="">เลือกสหกรณ์</option>
+          </select>
+        </div>
+        <div>
+          <label class="pastel-label">วันที่ตรวจสอบ</label>
+          <input type="date" id="insp-date" class="pastel-input w-full">
+        </div>
+        <div>
+          <label class="pastel-label">สถานะ</label>
+          <select id="insp-status" class="pastel-input w-full">
+            <option value="draft">ร่าง</option>
+            <option value="completed">เสร็จสิ้น</option>
+          </select>
+        </div>
+        <div class="md:col-span-3">
+          <label class="pastel-label">ผลสรุปโดยรวม</label>
+          <input type="text" id="insp-overall" class="pastel-input w-full" placeholder="สรุปผลการตรวจสอบโดยรวม">
+        </div>
+        <div class="md:col-span-3">
+          <label class="pastel-label">สรุปข้อเท็จจริง</label>
+          <textarea id="insp-findings" class="pastel-input w-full" rows="2" placeholder="สรุปข้อเท็จจริงที่ตรวจพบ..."></textarea>
+        </div>
+        <div class="md:col-span-3">
+          <label class="pastel-label">ข้อเสนอแนะโดยรวม</label>
+          <textarea id="insp-recommendations" class="pastel-input w-full" rows="2" placeholder="ข้อเสนอแนะ/วิธีการแก้ไข..."></textarea>
+        </div>
+      </div>
+
+      <!-- Criteria Tabs -->
+      <div class="pastel-card p-3 mb-4">
+        <div class="criteria-tabs" id="criteria-tabs"></div>
+      </div>
+
+      <!-- Criteria Content -->
+      <div id="criteria-content"></div>
+
+      <!-- Attachments -->
+      <div class="pastel-card p-4 mt-4">
+        <h3 class="font-semibold text-gray-800 mb-3">เอกสารแนบ</h3>
+        <div class="dropzone mb-3" onclick="document.getElementById('file-input').click()">
+          <svg class="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+          <p class="text-sm text-gray-500">คลิกเพื่ออัปโหลดรูปภาพหรือไฟล์</p>
+          <p class="text-xs text-gray-400 mt-1">รองรับ JPG, PNG, PDF</p>
+        </div>
+        <input type="file" id="file-input" class="hidden" accept="image/*,.pdf" onchange="handleFileUpload(this)">
+        <div id="attachment-preview" class="flex flex-wrap gap-3"></div>
+      </div>
+
+      <!-- Save Buttons -->
+      <div class="flex gap-3 mt-4 mb-8">
+        <button class="btn-pastel btn-blue flex-1 py-2.5 text-sm font-medium" onclick="saveInspection()">บันทึกรายการ</button>
+        <button class="btn-pastel bg-gray-100 text-gray-700 px-6 py-2.5 text-sm font-medium" onclick="navigateTo('inspection-list')">ยกเลิก</button>
+      </div>
+      <input type="hidden" id="insp-id">
+      <input type="hidden" id="insp-inspector-id">
+      <input type="hidden" id="insp-inspector-name">
+    </section>
+
+    <!-- ==================== COOPERATIVE LIST ==================== -->
+    <section class="page-section" id="cooperative-list-page">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">รายชื่อสหกรณ์</h1>
+          <p class="text-sm text-gray-500">จัดการข้อมูลสหกรณ์</p>
+        </div>
+        <button class="btn-pastel btn-blue px-4 py-2 text-sm" onclick="openCooperativeForm()">+ เพิ่มสหกรณ์</button>
+      </div>
+      <div class="pastel-card overflow-x-auto">
+        <table class="pastel-table min-w-[700px]">
+          <thead>
+            <tr>
+              <th>รหัส</th>
+              <th>ชื่อสหกรณ์</th>
+              <th>เลขทะเบียน</th>
+              <th>ประเภท</th>
+              <th>จำนวนสมาชิก</th>
+              <th>วันสิ้นปี</th>
+              <th>สถานะ</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="cooperative-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== COOPERATIVE FORM ==================== -->
+    <section class="page-section" id="cooperative-form-page">
+      <div class="flex items-center gap-2 mb-4">
+        <button class="p-2 rounded-lg hover:bg-gray-100" onclick="navigateTo('cooperative-list')"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg></button>
+        <h1 class="text-xl font-bold text-gray-800" id="coop-form-title">เพิ่มสหกรณ์ใหม่</h1>
+      </div>
+      <div class="pastel-card p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="pastel-label">ชื่อสหกรณ์ *</label>
+          <input type="text" id="coop-name" class="pastel-input w-full" required>
+        </div>
+        <div>
+          <label class="pastel-label">เลขทะเบียน</label>
+          <input type="text" id="coop-regno" class="pastel-input w-full">
+        </div>
+        <div>
+          <label class="pastel-label">ประเภท</label>
+          <select id="coop-type" class="pastel-input w-full">
+            <option value="สหกรณ์การเกษตร">สหกรณ์การเกษตร</option>
+            <option value="สหกรณ์ออมทรัพย์">สหกรณ์ออมทรัพย์</option>
+            <option value="สหกรณ์บริการ">สหกรณ์บริการ</option>
+            <option value="สหกรณ์ผู้บริโภค">สหกรณ์ผู้บริโภค</option>
+            <option value="สหกรณ์เครดิตยูเนี่ยน">สหกรณ์เครดิตยูเนี่ยน</option>
+            <option value="สหกรณ์ร้านค้า">สหกรณ์ร้านค้า</option>
+          </select>
+        </div>
+        <div>
+          <label class="pastel-label">จำนวนสมาชิก</label>
+          <input type="number" id="coop-members" class="pastel-input w-full">
+        </div>
+        <div class="md:col-span-2">
+          <label class="pastel-label">ที่อยู่</label>
+          <textarea id="coop-address" class="pastel-input w-full" rows="2"></textarea>
+        </div>
+        <div>
+          <label class="pastel-label">โทรศัพท์</label>
+          <input type="text" id="coop-phone" class="pastel-input w-full">
+        </div>
+        <div>
+          <label class="pastel-label">วันสิ้นปีบัญชี</label>
+          <input type="text" id="coop-fiscal" class="pastel-input w-full" placeholder="เช่น 30-09-2567">
+        </div>
+        <div>
+          <label class="pastel-label">หุ้นสมาชิกรวม</label>
+          <input type="text" id="coop-shares" class="pastel-input w-full" placeholder="เช่น 300000">
+        </div>
+        <div>
+          <label class="pastel-label">สถานะ</label>
+          <select id="coop-status" class="pastel-input w-full">
+            <option value="active">ใช้งาน</option>
+            <option value="inactive">ไม่ใช้งาน</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button class="btn-pastel btn-blue px-6 py-2 text-sm font-medium" onclick="saveCooperative()">บันทึก</button>
+        <button class="btn-pastel bg-gray-100 text-gray-700 px-6 py-2 text-sm font-medium" onclick="navigateTo('cooperative-list')">ยกเลิก</button>
+      </div>
+      <input type="hidden" id="coop-id">
+    </section>
+
+    <!-- ==================== REPORT PAGE ==================== -->
+    <section class="page-section" id="report-page">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">รายงานการตรวจสอบ</h1>
+          <p class="text-sm text-gray-500">สร้างรายงานการตรวจสอบกิจการและฐานะการเงิน</p>
+        </div>
+      </div>
+      <div class="pastel-card p-4 mb-4">
+        <div class="flex gap-3 items-end">
+          <div class="flex-1">
+            <label class="pastel-label">เลือกรายการตรวจสอบ</label>
+            <select id="report-insp-select" class="pastel-input w-full">
+              <option value="">เลือกรายการตรวจสอบ</option>
+            </select>
+          </div>
+          <button class="btn-pastel btn-blue px-5 py-2.5 text-sm" onclick="generateReport()">สร้างรายงาน</button>
+        </div>
+      </div>
+      <div id="report-output" class="hidden">
+        <div class="flex gap-2 mb-3">
+          <button class="btn-pastel btn-mint px-4 py-2 text-sm" onclick="copyReport()">คัดลอกข้อความ</button>
+          <button class="btn-pastel btn-lavender px-4 py-2 text-sm" onclick="printReport()">พิมพ์</button>
+        </div>
+        <div class="report-preview" id="report-content"></div>
+      </div>
+    </section>
+
+    <!-- ==================== ADMIN: USERS ==================== -->
+    <section class="page-section" id="admin-users-page">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">จัดการผู้ใช้</h1>
+          <p class="text-sm text-gray-500">เพิ่ม แก้ไข และลบผู้ใช้งานระบบ</p>
+        </div>
+        <button class="btn-pastel btn-blue px-4 py-2 text-sm" onclick="openUserForm()">+ เพิ่มผู้ใช้</button>
+      </div>
+      <div class="pastel-card overflow-x-auto">
+        <table class="pastel-table min-w-[600px]">
+          <thead>
+            <tr>
+              <th>ชื่อผู้ใช้</th>
+              <th>ชื่อ-นามสกุล</th>
+              <th>บทบาท</th>
+              <th>อีเมล</th>
+              <th>สถานะ</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== ADMIN: USER FORM ==================== -->
+    <section class="page-section" id="admin-user-form-page">
+      <div class="flex items-center gap-2 mb-4">
+        <button class="p-2 rounded-lg hover:bg-gray-100" onclick="navigateTo('admin-users')"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg></button>
+        <h1 class="text-xl font-bold text-gray-800" id="user-form-title">เพิ่มผู้ใช้ใหม่</h1>
+      </div>
+      <div class="pastel-card p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="pastel-label">ชื่อผู้ใช้ *</label>
+          <input type="text" id="user-username" class="pastel-input w-full" required>
+        </div>
+        <div>
+          <label class="pastel-label">รหัสผ่าน <span id="user-pwd-hint">(เว้นว่างหากไม่เปลี่ยน)</span></label>
+          <input type="password" id="user-password" class="pastel-input w-full">
+        </div>
+        <div>
+          <label class="pastel-label">ชื่อ-นามสกุล *</label>
+          <input type="text" id="user-name" class="pastel-input w-full" required>
+        </div>
+        <div>
+          <label class="pastel-label">บทบาท</label>
+          <select id="user-role" class="pastel-input w-full">
+            <option value="admin">ผู้ดูแลระบบ</option>
+            <option value="inspector">ผู้ตรวจการสหกรณ์</option>
+            <option value="user">ผู้ใช้ทั่วไป</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="pastel-label">อีเมล</label>
+          <input type="email" id="user-email" class="pastel-input w-full">
+        </div>
+        <div>
+          <label class="pastel-label">สถานะ</label>
+          <select id="user-status" class="pastel-input w-full">
+            <option value="active">ใช้งาน</option>
+            <option value="inactive">ไม่ใช้งาน</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button class="btn-pastel btn-blue px-6 py-2 text-sm font-medium" onclick="saveUser()">บันทึก</button>
+        <button class="btn-pastel bg-gray-100 text-gray-700 px-6 py-2 text-sm font-medium" onclick="navigateTo('admin-users')">ยกเลิก</button>
+      </div>
+      <input type="hidden" id="user-id">
+    </section>
+
+    <!-- ==================== ADMIN: SETTINGS ==================== -->
+    <section class="page-section" id="admin-settings-page">
+      <h1 class="text-xl font-bold text-gray-800 mb-1">ตั้งค่าระบบ</h1>
+      <p class="text-sm text-gray-500 mb-4">ตั้งค่าพื้นฐานของระบบ</p>
+      <div class="pastel-card p-5 space-y-4" id="settings-form">
+        <div>
+          <label class="pastel-label">ชื่อระบบ</label>
+          <input type="text" id="setting-systemName" class="pastel-input w-full">
+        </div>
+        <div>
+          <label class="pastel-label">ไอดีโฟลเดอร์ Google Drive</label>
+          <input type="text" id="setting-driveFolderId" class="pastel-input w-full" readonly>
+          <p class="text-xs text-gray-400 mt-1">เปลี่ยนแปลงได้ผ่านการรัน setupSystem() เท่านั้น</p>
+        </div>
+        <div>
+          <label class="pastel-label">เวอร์ชัน</label>
+          <input type="text" id="setting-version" class="pastel-input w-full">
+        </div>
+        <div>
+          <label class="pastel-label">อนุญาตลงทะเบียน</label>
+          <select id="setting-allowRegister" class="pastel-input w-full">
+            <option value="true">ใช่</option>
+            <option value="false">ไม่</option>
+          </select>
+        </div>
+        <button class="btn-pastel btn-blue px-6 py-2 text-sm font-medium mt-2" onclick="saveSettings()">บันทึกการตั้งค่า</button>
+      </div>
+      <div class="pastel-card p-5 mt-4">
+        <h3 class="font-semibold text-gray-800 mb-2">เริ่มต้นระบบ</h3>
+        <p class="text-sm text-gray-500 mb-3">รัน setupSystem() เพื่อสร้างโครงสร้างชีตและข้อมูลตัวอย่าง</p>
+        <button class="btn-pastel btn-pink px-6 py-2 text-sm font-medium" onclick="runSetup()">Setup System</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
