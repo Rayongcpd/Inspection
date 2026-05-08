@@ -36,7 +36,7 @@ body {
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
@@ -274,9 +274,8 @@ body {
 /* Criterion tabs */
 .criteria-tabs {
   display: flex; gap: 6px; overflow-x: auto;
-  padding: 4px; scrollbar-width: none;
+  padding: 4px 4px 8px 4px;
 }
-.criteria-tabs::-webkit-scrollbar { display: none; }
 .criteria-tab {
   flex-shrink: 0; padding: 8px 14px; border-radius: var(--radius-sm);
   font-size: 12.5px; cursor: pointer; white-space: nowrap;
