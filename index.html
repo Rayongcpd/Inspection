@@ -52,6 +52,13 @@
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
       <span>รายงาน</span>
     </div>
+    <div class="mt-4 pt-4 border-t border-slate-200 inspector-only">
+      <div class="text-xs font-semibold text-gray-400 mb-2 px-2">ทีมตรวจ</div>
+      <div class="sidebar-item" data-page="my-assignments" onclick="navigateTo('my-assignments')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V15a2.25 2.25 0 002.25 2.25h.75m-5.801 0h3.751M19.5 15h.75M3 12h.75m15 0h.75M12 3v.75m0 15v.75"/></svg>
+        <span>งานของฉัน</span>
+      </div>
+    </div>
     <div class="mt-4 pt-4 border-t border-slate-200 admin-only">
       <div class="text-xs font-semibold text-gray-400 mb-2 px-2">ผู้ดูแลระบบ</div>
       <div class="sidebar-item" data-page="admin-users" onclick="navigateTo('admin-users')">
@@ -88,6 +95,10 @@
     <div class="bottom-nav-item" data-page="report-page" onclick="navigateTo('report-page')">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
       <span>รายงาน</span>
+    </div>
+    <div class="bottom-nav-item inspector-only" data-page="my-assignments" onclick="navigateTo('my-assignments')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V15a2.25 2.25 0 002.25 2.25h.75m-5.801 0h3.751M19.5 15h.75M3 12h.75m15 0h.75M12 3v.75m0 15v.75"/></svg>
+      <span>งานของฉัน</span>
     </div>
     <div class="bottom-nav-item admin-only" onclick="toggleAdminPanel()">
       <div class="admin-center-btn">
@@ -529,6 +540,70 @@
         <button class="btn-pastel bg-gray-100 text-gray-700 px-6 py-2 text-sm font-medium" onclick="navigateTo('admin-users')">ยกเลิก</button>
       </div>
       <input type="hidden" id="user-id">
+    </section>
+
+    <!-- ==================== INSPECTION TEAM ==================== -->
+    <section class="page-section" id="inspection-team-page">
+      <div class="flex items-center gap-2 mb-4">
+        <button class="p-2 rounded-lg hover:bg-gray-100" onclick="navigateTo('inspection-list')"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg></button>
+        <h1 class="text-xl font-bold text-gray-800">จัดการทีมตรวจ</h1>
+      </div>
+      <div class="pastel-card p-4 mb-4">
+        <p class="text-sm text-gray-500 mb-2">เลือกสมาชิกทีมตรวจสำหรับรายการนี้</p>
+        <div id="team-members-list" class="space-y-2 mb-4"></div>
+        <div class="flex gap-2">
+          <select id="team-user-select" class="pastel-input flex-1">
+            <option value="">เลือกผู้ใช้</option>
+          </select>
+          <select id="team-role-select" class="pastel-input w-32">
+            <option value="member">สมาชิก</option>
+            <option value="leader">หัวหน้าทีม</option>
+          </select>
+          <button class="btn-pastel btn-blue px-3 py-2 text-sm" onclick="addTeamMember()">เพิ่ม</button>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn-pastel btn-blue px-6 py-2 text-sm font-medium" onclick="saveTeamMembers()">บันทึกทีม</button>
+        <button class="btn-pastel bg-gray-100 text-gray-700 px-6 py-2 text-sm font-medium" onclick="navigateTo('inspection-list')">ยกเลิก</button>
+      </div>
+      <input type="hidden" id="team-inspection-id">
+    </section>
+
+    <!-- ==================== ASSIGN CRITERIA ==================== -->
+    <section class="page-section" id="assign-criteria-page">
+      <div class="flex items-center gap-2 mb-4">
+        <button class="p-2 rounded-lg hover:bg-gray-100" onclick="navigateTo('inspection-list')"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg></button>
+        <h1 class="text-xl font-bold text-gray-800">มอบหมายหัวข้อตรวจ</h1>
+      </div>
+      <div class="pastel-card p-4 mb-4">
+        <p class="text-sm text-gray-500 mb-2">มอบหมายหัวข้อการตรวจให้สมาชิกทีม</p>
+        <div id="assign-criteria-list" class="space-y-2"></div>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn-pastel bg-gray-100 text-gray-700 px-6 py-2 text-sm font-medium" onclick="navigateTo('inspection-list')">กลับ</button>
+      </div>
+      <input type="hidden" id="assign-inspection-id">
+    </section>
+
+    <!-- ==================== MY ASSIGNMENTS ==================== -->
+    <section class="page-section" id="my-assignments-page">
+      <div class="mb-4">
+        <h1 class="text-xl font-bold text-gray-800">งานของฉัน</h1>
+        <p class="text-sm text-gray-500">หัวข้อการตรวจที่ได้รับมอบหมาย</p>
+      </div>
+      <div class="pastel-card overflow-x-auto">
+        <table class="pastel-table min-w-[600px]">
+          <thead>
+            <tr>
+              <th>รายการตรวจ</th>
+              <th>หัวข้อ</th>
+              <th>สถานะ</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="my-assignments-table-body"></tbody>
+        </table>
+      </div>
     </section>
 
     <!-- ==================== ADMIN: SETTINGS ==================== -->

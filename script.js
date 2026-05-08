@@ -68,7 +68,8 @@ function showToast(message, type) {
 function navigateTo(page) {
   currentPage = page;
   var pages = ['landing', 'login', 'dashboard', 'inspection-list', 'inspection-form',
-    'cooperative-list', 'cooperative-form', 'report-page', 'admin-users', 'admin-user-form', 'admin-settings'];
+    'cooperative-list', 'cooperative-form', 'report-page', 'admin-users', 'admin-user-form', 'admin-settings',
+    'inspection-team', 'assign-criteria', 'my-assignments'];
 
   pages.forEach(function(p) {
     var el = document.getElementById(p + '-page');
@@ -98,6 +99,7 @@ function navigateTo(page) {
   if (page === 'report-page') loadReportPage();
   if (page === 'admin-users') loadUsers();
   if (page === 'admin-settings') loadSettings();
+  if (page === 'my-assignments') loadMyAssignments();
 
   window.scrollTo(0, 0);
 }
@@ -113,6 +115,20 @@ function updateAuthUI() {
   });
   var bottomNav = document.getElementById('bottom-nav');
   if (bottomNav) bottomNav.style.display = currentUser ? 'flex' : 'none';
+}
+
+function isTeamLeader(inspection) {
+  if (!currentUser || !inspection) return false;
+  if (currentUser.role === 'admin') return true;
+  return inspection.teamLeaderId === currentUser.id;
+}
+
+function canEditCriterion(criterionResult, inspection) {
+  if (!currentUser) return false;
+  if (currentUser.role === 'admin') return true;
+  if (isTeamLeader(inspection)) return true;
+  if (criterionResult.assignedTo === currentUser.id) return true;
+  return false;
 }
 
 // --- Login ---
@@ -359,6 +375,7 @@ function renderInspections() {
   }
   var html = '';
   inspectionsData.forEach(function(item) {
+    var isLeader = isTeamLeader(item);
     html += '<tr>' +
       '<td>' + escapeHtml(item.id || '') + '</td>' +
       '<td>' + escapeHtml(item.cooperativeName || '') + '</td>' +
@@ -370,6 +387,10 @@ function renderInspections() {
       '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="viewInspection(\'' + escapeHtml(item.id || '') + '\')">ดู</button>';
     if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'inspector')) {
       html += '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="editInspection(\'' + escapeHtml(item.id || '') + '\')">แก้ไข</button>';
+    }
+    if (isLeader || currentUser.role === 'admin') {
+      html += '<button class="text-blue-500 text-sm hover:underline mr-2" onclick="openTeamManagement(\'' + escapeHtml(item.id || '') + '\')">ทีม</button>';
+      html += '<button class="text-purple-500 text-sm hover:underline mr-2" onclick="openAssignCriteria(\'' + escapeHtml(item.id || '') + '\')">มอบหมาย</button>';
     }
     if (currentUser && currentUser.role === 'admin') {
       html += '<button class="text-red-500 text-sm hover:underline" onclick="deleteInspectionConfirm(\'' + escapeHtml(item.id || '') + '\')">ลบ</button>';
@@ -521,13 +542,23 @@ function buildCriteriaUI(results, readonly) {
     results.forEach(function(r) { resultMap[r.criterionNo] = r; });
   }
 
+  var inspection = currentInspection ? currentInspection.inspection : null;
+  var isRead = !!readonly;
+
   criteriaList.forEach(function(c, idx) {
     var r = resultMap[c.no] || {};
     var activeClass = idx === 0 ? 'active' : '';
     var displayStyle = idx === 0 ? 'block' : 'none';
+    var canEdit = canEditCriterion(r, inspection);
+    var isAssigned = r.assignedTo && r.assignedTo !== '';
+    var assignedLabel = isAssigned ? ('<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded ml-2">มอบหมายให้: ' + escapeHtml(getUserNameById(r.assignedTo)) + '</span>') : '';
+    var statusBadge = '';
+    if (r.status === 'assigned') statusBadge = '<span class="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded ml-1">assigned</span>';
+    if (r.status === 'submitted') statusBadge = '<span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded ml-1">submitted</span>';
+    if (r.status === 'approved') statusBadge = '<span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded ml-1">approved</span>';
 
     tabsHtml += '<div class="criteria-tab ' + activeClass + '" data-cno="' + c.no + '" onclick="switchCriteriaTab(' + c.no + ')">' +
-      '<span class="font-medium">' + c.no + '</span> ' + c.name + '</div>';
+      '<span class="font-medium">' + c.no + '</span> ' + c.name + assignedLabel + statusBadge + '</div>';
 
     contentHtml += '<div id="criteria-panel-' + c.no + '" style="display:' + displayStyle + '">' +
       '<div class="criterion-form">' +
@@ -536,19 +567,19 @@ function buildCriteriaUI(results, readonly) {
       '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">' +
       '<div class="md:col-span-2">' +
       '<label class="pastel-label">ข้อเท็จจริงที่ตรวจพบ</label>' +
-      '<textarea id="crit-findings-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="สรุปข้อเท็จจริง..."' + (readonly ? ' disabled' : '') + '>' + escapeHtml(r.findings || '') + '</textarea>' +
+      '<textarea id="crit-findings-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="สรุปข้อเท็จจริง..."' + (isRead || !canEdit ? ' disabled' : '') + '>' + escapeHtml(r.findings || '') + '</textarea>' +
       '</div>' +
       '<div class="md:col-span-2">' +
       '<label class="pastel-label">ข้อเสนอความเห็น / วิธีการแก้ไข</label>' +
-      '<textarea id="crit-recs-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="เสนอแนะและวิธีแก้ไข..."' + (readonly ? ' disabled' : '') + '>' + escapeHtml(r.recommendations || '') + '</textarea>' +
+      '<textarea id="crit-recs-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="เสนอแนะและวิธีแก้ไข..."' + (isRead || !canEdit ? ' disabled' : '') + '>' + escapeHtml(r.recommendations || '') + '</textarea>' +
       '</div>' +
       '<div>' +
       '<label class="pastel-label">ระยะเวลาที่ควรให้แก้ไข (วัน)</label>' +
-      '<input type="number" id="crit-deadline-' + c.no + '" class="pastel-input w-full" value="' + escapeHtml(r.deadlineDays || '') + '"' + (readonly ? ' disabled' : '') + '>' +
+      '<input type="number" id="crit-deadline-' + c.no + '" class="pastel-input w-full" value="' + escapeHtml(r.deadlineDays || '') + '"' + (isRead || !canEdit ? ' disabled' : '') + '>' +
       '</div>' +
       '<div>' +
       '<label class="pastel-label">ระดับความเสี่ยง</label>' +
-      '<select id="crit-risk-' + c.no + '" class="pastel-input w-full"' + (readonly ? ' disabled' : '') + '>' +
+      '<select id="crit-risk-' + c.no + '" class="pastel-input w-full"' + (isRead || !canEdit ? ' disabled' : '') + '>' +
       '<option value="low" ' + (r.riskLevel === 'low' ? 'selected' : '') + '>ต่ำ (Low)</option>' +
       '<option value="medium" ' + (r.riskLevel === 'medium' ? 'selected' : '') + '>ปานกลาง (Medium)</option>' +
       '<option value="high" ' + (r.riskLevel === 'high' ? 'selected' : '') + '>สูง (High)</option>' +
@@ -556,7 +587,7 @@ function buildCriteriaUI(results, readonly) {
       '</div>' +
       '<div>' +
       '<label class="pastel-label">สถานะ</label>' +
-      '<select id="crit-status-' + c.no + '" class="pastel-input w-full"' + (readonly ? ' disabled' : '') + '>' +
+      '<select id="crit-status-' + c.no + '" class="pastel-input w-full"' + (isRead || !canEdit ? ' disabled' : '') + '>' +
       '<option value="pending" ' + (r.status === 'pending' ? 'selected' : '') + '>รอดำเนินการ</option>' +
       '<option value="passed" ' + (r.status === 'passed' ? 'selected' : '') + '>ผ่าน</option>' +
       '<option value="issue" ' + (r.status === 'issue' ? 'selected' : '') + '>พบปัญหา</option>' +
@@ -565,9 +596,34 @@ function buildCriteriaUI(results, readonly) {
       '<div class="flex items-end">' +
       '<div id="crit-badge-' + c.no + '" class="risk-' + (r.riskLevel || 'low') + ' inline-block">' + getRiskLabel(r.riskLevel || 'low') + '</div>' +
       '</div>' +
-      '</div>' +
-      '</div>' +
       '</div>';
+
+    // Show assignment info and action buttons for team workflow
+    if (r.assignedTo && inspection) {
+      var assignedUser = getUserNameById(r.assignedTo);
+      contentHtml += '<div class="mt-3 p-3 bg-slate-50 rounded-lg text-sm">' +
+        '<div class="flex justify-between items-center">' +
+        '<span class="text-gray-600">ผู้รับมอบหมาย: <strong>' + escapeHtml(assignedUser) + '</strong></span>' +
+        '<span class="text-xs text-gray-400">สถานะ: ' + escapeHtml(r.status || 'pending') + '</span>' +
+        '</div>';
+
+      // Submit button for assigned user
+      if (r.assignedTo === (currentUser ? currentUser.id : '') && r.status !== 'approved') {
+        contentHtml += '<button class="btn-pastel btn-mint px-4 py-1.5 text-xs mt-2" onclick="submitCriterionResult(' + c.no + ')">ส่งผลตรวจสอบ</button>';
+      }
+
+      // Review buttons for team leader
+      if (isTeamLeader(inspection) && r.status === 'submitted') {
+        contentHtml += '<div class="flex gap-2 mt-2">' +
+          '<button class="btn-pastel btn-blue px-3 py-1.5 text-xs" onclick="reviewCriterionResult(' + c.no + ', \'approved\')">อนุมัติ</button>' +
+          '<button class="btn-pastel bg-gray-100 text-gray-700 px-3 py-1.5 text-xs" onclick="reviewCriterionResult(' + c.no + ', \'rejected\')">ส่งกลับแก้ไข</button>' +
+          '</div>';
+      }
+
+      contentHtml += '</div>';
+    }
+
+    contentHtml += '</div></div>';
   });
 
   tabsContainer.innerHTML = tabsHtml;
@@ -582,6 +638,12 @@ function buildCriteriaUI(results, readonly) {
       });
     }
   });
+}
+
+function getUserNameById(userId) {
+  if (!userId || !usersData) return userId;
+  var u = usersData.find(function(x) { return x.id === userId; });
+  return u ? u.name : userId;
 }
 
 function switchCriteriaTab(cno) {
@@ -629,6 +691,13 @@ function saveInspection() {
     });
   });
 
+  var teamStatus = 'draft';
+  var teamLeaderId = '';
+  if (currentInspection && currentInspection.inspection) {
+    teamStatus = currentInspection.inspection.teamStatus || 'draft';
+    teamLeaderId = currentInspection.inspection.teamLeaderId || '';
+  }
+
   var data = {
     id: document.getElementById('insp-id').value,
     cooperativeId: coopSel.value,
@@ -640,6 +709,8 @@ function saveInspection() {
     overallResult: document.getElementById('insp-overall').value,
     summaryFindings: document.getElementById('insp-findings').value,
     summaryRecommendations: document.getElementById('insp-recommendations').value,
+    teamStatus: teamStatus,
+    teamLeaderId: teamLeaderId,
     results: results
   };
 
@@ -810,6 +881,339 @@ function generateReport() {
     .catch(function(err) {
       hideLoader();
       showToast('สร้างรายงานไม่สำเร็จ', 'error');
+    });
+}
+
+// --- Team Management ---
+var currentTeamMembers = [];
+
+function openTeamManagement(inspectionId) {
+  document.getElementById('team-inspection-id').value = inspectionId;
+  currentTeamMembers = [];
+  showLoader('โหลดข้อมูลทีม...');
+  callApi('getInspectionTeam', {inspectionId: inspectionId})
+    .then(function(res) {
+      hideLoader();
+      if (res && res.success) {
+        currentTeamMembers = res.team || [];
+        renderTeamMembers();
+        loadUserSelect();
+        navigateTo('inspection-team');
+      }
+    })
+    .catch(function(err) {
+      hideLoader();
+      showToast('โหลดข้อมูลทีมไม่สำเร็จ', 'error');
+    });
+}
+
+function loadUserSelect() {
+  var sel = document.getElementById('team-user-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">เลือกผู้ใช้</option>';
+  if (!usersData || usersData.length === 0) {
+    callApi('getUsers', {}).then(function(res) {
+      if (res && res.success) {
+        usersData = res.users || [];
+        usersData.forEach(function(u) {
+          if (u.status === 'active' && (u.role === 'inspector' || u.role === 'admin')) {
+            var opt = document.createElement('option');
+            opt.value = u.id;
+            opt.textContent = u.name + ' (' + u.role + ')';
+            sel.appendChild(opt);
+          }
+        });
+      }
+    });
+  } else {
+    usersData.forEach(function(u) {
+      if (u.status === 'active' && (u.role === 'inspector' || u.role === 'admin')) {
+        var opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = u.name + ' (' + u.role + ')';
+        sel.appendChild(opt);
+      }
+    });
+  }
+}
+
+function renderTeamMembers() {
+  var container = document.getElementById('team-members-list');
+  if (!container) return;
+  if (!currentTeamMembers || currentTeamMembers.length === 0) {
+    container.innerHTML = '<p class="text-sm text-gray-400">ยังไม่มีสมาชิกทีม</p>';
+    return;
+  }
+  var html = '';
+  currentTeamMembers.forEach(function(m, idx) {
+    html += '<div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">' +
+      '<div class="flex items-center gap-2">' +
+      '<span class="font-medium text-sm">' + escapeHtml(m.userName || '') + '</span>' +
+      '<span class="text-xs ' + (m.roleInTeam === 'leader' ? 'text-amber-600 bg-amber-50' : 'text-gray-500 bg-gray-100') + ' px-2 py-0.5 rounded">' + (m.roleInTeam === 'leader' ? 'หัวหน้าทีม' : 'สมาชิก') + '</span>' +
+      '</div>' +
+      '<button class="text-red-500 text-xs hover:underline" onclick="removeTeamMember(' + idx + ')">ลบ</button>' +
+      '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function addTeamMember() {
+  var userSel = document.getElementById('team-user-select');
+  var roleSel = document.getElementById('team-role-select');
+  if (!userSel || !userSel.value) { showToast('กรุณาเลือกผู้ใช้', 'error'); return; }
+  var userId = userSel.value;
+  var userName = userSel.options[userSel.selectedIndex].text.split(' (')[0];
+  var role = roleSel ? roleSel.value : 'member';
+
+  // Check if already exists
+  var exists = currentTeamMembers.some(function(m) { return m.userId === userId; });
+  if (exists) { showToast('ผู้ใช้นี้อยู่ในทีมแล้ว', 'error'); return; }
+
+  // If adding leader, remove existing leader
+  if (role === 'leader') {
+    currentTeamMembers = currentTeamMembers.filter(function(m) { return m.roleInTeam !== 'leader'; });
+  }
+
+  currentTeamMembers.push({
+    userId: userId,
+    userName: userName,
+    roleInTeam: role,
+    addedBy: currentUser ? currentUser.id : 'system'
+  });
+  renderTeamMembers();
+  userSel.value = '';
+}
+
+function removeTeamMember(idx) {
+  currentTeamMembers.splice(idx, 1);
+  renderTeamMembers();
+}
+
+function saveTeamMembers() {
+  var inspectionId = document.getElementById('team-inspection-id').value;
+  if (!inspectionId) return;
+  showLoader('กำลังบันทึก...');
+  callApi('saveInspectionTeam', {
+    inspectionId: inspectionId,
+    members: currentTeamMembers
+  })
+    .then(function(res) {
+      hideLoader();
+      if (res && res.success) {
+        showToast('บันทึกทีมสำเร็จ', 'success');
+        navigateTo('inspection-list');
+      } else {
+        showToast(res && res.message ? res.message : 'บันทึกไม่สำเร็จ', 'error');
+      }
+    })
+    .catch(function(err) {
+      hideLoader();
+      showToast('บันทึกไม่สำเร็จ', 'error');
+    });
+}
+
+// --- Assign Criteria ---
+function openAssignCriteria(inspectionId) {
+  document.getElementById('assign-inspection-id').value = inspectionId;
+  showLoader('โหลดข้อมูล...');
+  callApi('getInspectionDetail', {id: inspectionId})
+    .then(function(res) {
+      hideLoader();
+      if (res && res.success) {
+        currentInspection = res;
+        loadAssignCriteriaList();
+        navigateTo('assign-criteria');
+      } else {
+        showToast('โหลดไม่สำเร็จ', 'error');
+      }
+    })
+    .catch(function(err) {
+      hideLoader();
+      showToast('โหลดไม่สำเร็จ', 'error');
+    });
+}
+
+function loadAssignCriteriaList() {
+  var container = document.getElementById('assign-criteria-list');
+  if (!container) return;
+  var team = currentInspection && currentInspection.team ? currentInspection.team : [];
+  var results = currentInspection && currentInspection.results ? currentInspection.results : [];
+
+  if (!team || team.length === 0) {
+    container.innerHTML = '<p class="text-sm text-gray-400">ยังไม่มีทีมตรวจ กรุณาจัดการทีมก่อน</p>';
+    return;
+  }
+
+  var html = '';
+  results.forEach(function(r) {
+    var assignedUserName = getUserNameById(r.assignedTo);
+    html += '<div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">' +
+      '<div class="flex-1">' +
+      '<div class="font-medium text-sm">' + r.criterionNo + '. ' + escapeHtml(r.criterionName) + '</div>' +
+      '<div class="text-xs text-gray-400">' + (r.assignedTo ? 'มอบหมายให้: ' + escapeHtml(assignedUserName) : 'ยังไม่ได้มอบหมาย') + '</div>' +
+      '</div>' +
+      '<select class="pastel-input text-sm w-40" onchange="assignCriterion(' + r.criterionNo + ', this.value)">' +
+      '<option value="">-- มอบหมาย --</option>';
+    team.forEach(function(m) {
+      var selected = r.assignedTo === m.userId ? 'selected' : '';
+      html += '<option value="' + escapeHtml(m.userId) + '" ' + selected + '>' + escapeHtml(m.userName) + '</option>';
+    });
+    html += '</select></div>';
+  });
+  container.innerHTML = html;
+}
+
+function assignCriterion(criterionNo, userId) {
+  if (!userId) return;
+  var inspectionId = document.getElementById('assign-inspection-id').value;
+  var userName = getUserNameById(userId);
+  showLoader('กำลังมอบหมาย...');
+  callApi('assignCriteria', {
+    inspectionId: inspectionId,
+    criterionNo: String(criterionNo),
+    userId: userId,
+    userName: userName,
+    assignedBy: currentUser ? currentUser.id : ''
+  })
+    .then(function(res) {
+      hideLoader();
+      if (res && res.success) {
+        showToast('มอบหมายสำเร็จ', 'success');
+      } else {
+        showToast(res && res.message ? res.message : 'มอบหมายไม่สำเร็จ', 'error');
+      }
+    })
+    .catch(function(err) {
+      hideLoader();
+      showToast('มอบหมายไม่สำเร็จ', 'error');
+    });
+}
+
+// --- My Assignments ---
+function loadMyAssignments() {
+  if (!currentUser) return;
+  showLoader('โหลดงานของฉัน...');
+  callApi('getMyAssignments', {userId: currentUser.id})
+    .then(function(res) {
+      hideLoader();
+      if (res && res.success) {
+        renderMyAssignments(res.assignments || []);
+      } else {
+        showToast('โหลดไม่สำเร็จ', 'error');
+      }
+    })
+    .catch(function(err) {
+      hideLoader();
+      showToast('โหลดไม่สำเร็จ', 'error');
+    });
+}
+
+function renderMyAssignments(assignments) {
+  var tbody = document.getElementById('my-assignments-table-body');
+  if (!tbody) return;
+  if (!assignments || assignments.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-400 py-6">ไม่มีงานที่ได้รับมอบหมาย</td></tr>';
+    return;
+  }
+  var html = '';
+  assignments.forEach(function(a) {
+    var statusClass = a.status === 'submitted' ? 'status-completed' : (a.status === 'assigned' ? 'status-passed' : 'status-pending');
+    html += '<tr>' +
+      '<td>' + escapeHtml(a.inspectionId || '') + '</td>' +
+      '<td>' + escapeHtml(a.criterionNo + '. ' + a.criterionName) + '</td>' +
+      '<td><span class="badge ' + statusClass + '">' + escapeHtml(a.status || '') + '</span></td>' +
+      '<td><button class="text-slate-700 text-sm hover:underline" onclick="openAssignmentInspection(\'' + escapeHtml(a.resultId) + '\')">ตรวจสอบ</button></td>' +
+      '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function openAssignmentInspection(resultId) {
+  showLoader('โหลดข้อมูล...');
+  callApi('getMyAssignments', {userId: currentUser.id})
+    .then(function(res) {
+      hideLoader();
+      if (res && res.success && res.assignments) {
+        var assignment = res.assignments.find(function(a) { return a.resultId === resultId; });
+        if (assignment && assignment.inspectionId) {
+          editInspection(assignment.inspectionId, false);
+        } else {
+          showToast('ไม่พบรายการ', 'error');
+        }
+      }
+    })
+    .catch(function(err) {
+      hideLoader();
+      showToast('โหลดไม่สำเร็จ', 'error');
+    });
+}
+
+// --- Submit / Review Criteria ---
+function submitCriterionResult(criterionNo) {
+  if (!currentInspection || !currentInspection.results) return;
+  var result = currentInspection.results.find(function(r) { return r.criterionNo === criterionNo; });
+  if (!result) return;
+  if (!currentUser) return;
+
+  var findings = document.getElementById('crit-findings-' + criterionNo) ? document.getElementById('crit-findings-' + criterionNo).value : '';
+  var recommendations = document.getElementById('crit-recs-' + criterionNo) ? document.getElementById('crit-recs-' + criterionNo).value : '';
+  var deadlineDays = document.getElementById('crit-deadline-' + criterionNo) ? document.getElementById('crit-deadline-' + criterionNo).value : '';
+  var riskLevel = document.getElementById('crit-risk-' + criterionNo) ? document.getElementById('crit-risk-' + criterionNo).value : 'low';
+
+  showLoader('กำลังส่งผล...');
+  callApi('submitCriteriaResult', {
+    resultId: result.id,
+    userId: currentUser.id,
+    findings: findings,
+    recommendations: recommendations,
+    deadlineDays: deadlineDays,
+    riskLevel: riskLevel
+  })
+    .then(function(res) {
+      hideLoader();
+      if (res && res.success) {
+        showToast('ส่งผลตรวจสอบสำเร็จ', 'success');
+        editInspection(currentInspection.inspection.id, false);
+      } else {
+        showToast(res && res.message ? res.message : 'ส่งไม่สำเร็จ', 'error');
+      }
+    })
+    .catch(function(err) {
+      hideLoader();
+      showToast('ส่งไม่สำเร็จ', 'error');
+    });
+}
+
+function reviewCriterionResult(criterionNo, status) {
+  if (!currentInspection || !currentInspection.results) return;
+  var result = currentInspection.results.find(function(r) { return r.criterionNo === criterionNo; });
+  if (!result || !currentUser) return;
+
+  var comment = '';
+  if (status === 'rejected') {
+    comment = prompt('ระบุหมายเหตุการส่งกลับแก้ไข:');
+    if (comment === null) return;
+  }
+
+  showLoader('กำลังดำเนินการ...');
+  callApi('reviewCriteria', {
+    resultId: result.id,
+    reviewerId: currentUser.id,
+    status: status,
+    comment: comment
+  })
+    .then(function(res) {
+      hideLoader();
+      if (res && res.success) {
+        showToast(res.message || 'ดำเนินการสำเร็จ', 'success');
+        editInspection(currentInspection.inspection.id, false);
+      } else {
+        showToast(res && res.message ? res.message : 'ดำเนินการไม่สำเร็จ', 'error');
+      }
+    })
+    .catch(function(err) {
+      hideLoader();
+      showToast('ดำเนินการไม่สำเร็จ', 'error');
     });
 }
 
@@ -1006,6 +1410,9 @@ function getStatusClass(status) {
   if (status === 'passed') return 'status-passed';
   if (status === 'issue') return 'status-issue';
   if (status === 'pending') return 'status-pending';
+  if (status === 'assigned') return 'status-passed';
+  if (status === 'submitted') return 'status-completed';
+  if (status === 'approved') return 'status-passed';
   return 'status-draft';
 }
 
