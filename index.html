@@ -252,7 +252,7 @@
           <h1 class="text-xl font-bold text-gray-800">รายการตรวจสอบ</h1>
           <p class="text-sm text-gray-500">จัดการรายการตรวจสอบกิจการและฐานะการเงิน</p>
         </div>
-        <button class="btn-pastel btn-blue px-4 py-2 text-sm" onclick="openInspectionForm()">+ สร้างใหม่</button>
+        <button class="btn-pastel btn-blue px-4 py-2 text-sm inspector-only" onclick="openInspectionForm()">+ สร้างใหม่</button>
       </div>
       <div class="pastel-card overflow-x-auto">
         <table class="pastel-table min-w-[700px]">
@@ -334,7 +334,7 @@
 
       <!-- Save Buttons -->
       <div class="flex gap-3 mt-4 mb-8">
-        <button class="btn-pastel btn-blue flex-1 py-2.5 text-sm font-medium" onclick="saveInspection()">บันทึกรายการ</button>
+        <button class="btn-pastel btn-blue flex-1 py-2.5 text-sm font-medium inspector-only" onclick="saveInspection()">บันทึกรายการ</button>
         <button class="btn-pastel bg-gray-100 text-gray-700 px-6 py-2.5 text-sm font-medium" onclick="navigateTo('inspection-list')">ยกเลิก</button>
       </div>
       <input type="hidden" id="insp-id">
@@ -349,7 +349,7 @@
           <h1 class="text-xl font-bold text-gray-800">รายชื่อสหกรณ์</h1>
           <p class="text-sm text-gray-500">จัดการข้อมูลสหกรณ์</p>
         </div>
-        <button class="btn-pastel btn-blue px-4 py-2 text-sm" onclick="openCooperativeForm()">+ เพิ่มสหกรณ์</button>
+        <button class="btn-pastel btn-blue px-4 py-2 text-sm inspector-only" onclick="openCooperativeForm()">+ เพิ่มสหกรณ์</button>
       </div>
       <div class="pastel-card overflow-x-auto">
         <table class="pastel-table min-w-[700px]">
@@ -425,7 +425,7 @@
         </div>
       </div>
       <div class="flex gap-3 mt-4">
-        <button class="btn-pastel btn-blue px-6 py-2 text-sm font-medium" onclick="saveCooperative()">บันทึก</button>
+        <button class="btn-pastel btn-blue px-6 py-2 text-sm font-medium inspector-only" onclick="saveCooperative()">บันทึก</button>
         <button class="btn-pastel bg-gray-100 text-gray-700 px-6 py-2 text-sm font-medium" onclick="navigateTo('cooperative-list')">ยกเลิก</button>
       </div>
       <input type="hidden" id="coop-id">

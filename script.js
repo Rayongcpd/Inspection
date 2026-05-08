@@ -104,8 +104,12 @@ function navigateTo(page) {
 
 function updateAuthUI() {
   var isAdmin = currentUser && currentUser.role === 'admin';
+  var isInspector = currentUser && (currentUser.role === 'admin' || currentUser.role === 'inspector');
   document.querySelectorAll('.admin-only').forEach(function(el) {
     el.style.display = isAdmin ? '' : 'none';
+  });
+  document.querySelectorAll('.inspector-only').forEach(function(el) {
+    el.style.display = isInspector ? '' : 'none';
   });
   var bottomNav = document.getElementById('bottom-nav');
   if (bottomNav) bottomNav.style.display = currentUser ? 'flex' : 'none';
@@ -245,8 +249,14 @@ function renderCooperatives() {
       '<td>' + escapeHtml(c.members || '') + '</td>' +
       '<td>' + escapeHtml(c.fiscalYearEnd || '') + '</td>' +
       '<td><span class="badge ' + (c.status === 'active' ? 'status-passed' : 'status-draft') + '">' + escapeHtml(c.status || '') + '</span></td>' +
-      '<td><button class="text-slate-700 text-sm hover:underline mr-2" onclick="editCooperative(\'' + escapeHtml(c.id || '') + '\')">แก้ไข</button>' +
-      '<button class="text-slate-700 text-sm hover:underline" onclick="deleteCooperativeConfirm(\'' + escapeHtml(c.id || '') + '\')">ลบ</button></td></tr>';
+      '<td>';
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'inspector')) {
+      html += '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="editCooperative(\'' + escapeHtml(c.id || '') + '\')">แก้ไข</button>' +
+      '<button class="text-slate-700 text-sm hover:underline" onclick="deleteCooperativeConfirm(\'' + escapeHtml(c.id || '') + '\')">ลบ</button>';
+    } else {
+      html += '<span class="text-xs text-gray-400">-</span>';
+    }
+    html += '</td></tr>';
   });
   tbody.innerHTML = html;
 }
@@ -354,10 +364,12 @@ function renderInspections() {
       '<td><span class="badge ' + getStatusClass(item.status) + '">' + escapeHtml(item.status || '') + '</span></td>' +
       '<td>' + escapeHtml(item.overallResult || '-') + '</td>' +
       '<td>' +
-      '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="viewInspection(\'' + escapeHtml(item.id || '') + '\')">ดู</button>' +
-      '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="editInspection(\'' + escapeHtml(item.id || '') + '\')">แก้ไข</button>' +
-      '<button class="text-slate-700 text-sm hover:underline" onclick="deleteInspectionConfirm(\'' + escapeHtml(item.id || '') + '\')">ลบ</button>' +
-      '</td></tr>';
+      '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="viewInspection(\'' + escapeHtml(item.id || '') + '\')">ดู</button>';
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'inspector')) {
+      html += '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="editInspection(\'' + escapeHtml(item.id || '') + '\')">แก้ไข</button>' +
+      '<button class="text-slate-700 text-sm hover:underline" onclick="deleteInspectionConfirm(\'' + escapeHtml(item.id || '') + '\')">ลบ</button>';
+    }
+    html += '</td></tr>';
   });
   tbody.innerHTML = html;
 }
