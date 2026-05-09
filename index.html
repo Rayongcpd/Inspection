@@ -199,9 +199,15 @@
 
     <!-- ==================== DASHBOARD ==================== -->
     <section class="page-section" id="dashboard-page">
-      <div class="mb-6">
-        <h1 class="text-xl font-bold text-gray-800">แดชบอร์ด</h1>
-        <p class="text-sm text-gray-500">สรุปภาพรวมการตรวจสอบสหกรณ์</p>
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">แดชบอร์ด</h1>
+          <p class="text-sm text-gray-500">สรุปภาพรวมการตรวจสอบสหกรณ์</p>
+        </div>
+        <button class="btn-pastel bg-white border border-gray-200 text-gray-600 px-3 py-1.5 text-xs flex items-center gap-1 shadow-sm hover:bg-gray-50" onclick="loadDashboard()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          ดึงข้อมูลล่าสุด
+        </button>
       </div>
       <div class="stats-grid mb-6">
         <div class="pastel-card p-4">
@@ -263,7 +269,13 @@
           <h1 class="text-xl font-bold text-gray-800">รายการตรวจสอบ</h1>
           <p class="text-sm text-gray-500">จัดการรายการตรวจสอบกิจการและฐานะการเงิน</p>
         </div>
-        <button class="btn-pastel btn-blue px-4 py-2 text-sm inspector-only" onclick="openInspectionForm()">+ สร้างใหม่</button>
+        <div class="flex gap-2">
+          <button class="btn-pastel bg-white border border-gray-200 text-gray-600 px-3 py-1.5 text-xs flex items-center gap-1 shadow-sm hover:bg-gray-50" onclick="loadInspections()">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            ดึงข้อมูลล่าสุด
+          </button>
+          <button class="btn-pastel btn-blue px-4 py-2 text-sm inspector-only" onclick="openInspectionForm()">+ สร้างใหม่</button>
+        </div>
       </div>
       <div class="pastel-card overflow-x-auto">
         <table class="pastel-table min-w-[700px]">
@@ -285,9 +297,15 @@
 
     <!-- ==================== INSPECTION FORM ==================== -->
     <section class="page-section" id="inspection-form-page">
-      <div class="flex items-center gap-2 mb-4">
-        <button class="p-2 rounded-lg hover:bg-gray-100" onclick="navigateTo('inspection-list')"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg></button>
-        <h1 class="text-xl font-bold text-gray-800" id="insp-form-title">สร้างรายการตรวจสอบใหม่</h1>
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center gap-2">
+          <button class="p-2 rounded-lg hover:bg-gray-100" onclick="navigateTo('inspection-list')"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg></button>
+          <h1 class="text-xl font-bold text-gray-800" id="insp-form-title">สร้างรายการตรวจสอบใหม่</h1>
+        </div>
+        <button id="btn-refresh-data" class="btn-pastel bg-white border border-gray-200 text-gray-600 px-3 py-1.5 text-xs flex items-center gap-1 shadow-sm hover:bg-gray-50 hidden" onclick="refreshInspectionData()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          ดึงข้อมูลล่าสุด
+        </button>
       </div>
 
       <!-- Header Info -->
@@ -571,9 +589,15 @@
 
     <!-- ==================== ASSIGN CRITERIA ==================== -->
     <section class="page-section" id="assign-criteria-page">
-      <div class="flex items-center gap-2 mb-4">
-        <button class="p-2 rounded-lg hover:bg-gray-100" onclick="navigateTo('inspection-list')"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg></button>
-        <h1 class="text-xl font-bold text-gray-800">มอบหมายหัวข้อตรวจ</h1>
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center gap-2">
+          <button class="p-2 rounded-lg hover:bg-gray-100" onclick="navigateTo('inspection-list')"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg></button>
+          <h1 class="text-xl font-bold text-gray-800">มอบหมายหัวข้อตรวจ</h1>
+        </div>
+        <button class="btn-pastel bg-white border border-gray-200 text-gray-600 px-3 py-1.5 text-xs flex items-center gap-1 shadow-sm hover:bg-gray-50" onclick="openAssignCriteria(document.getElementById('assign-inspection-id').value)">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          ดึงข้อมูลล่าสุด
+        </button>
       </div>
       <div class="pastel-card p-4 mb-4">
         <p class="text-sm text-gray-500 mb-2">มอบหมายหัวข้อการตรวจให้สมาชิกทีม</p>
@@ -587,9 +611,15 @@
 
     <!-- ==================== MY ASSIGNMENTS ==================== -->
     <section class="page-section" id="my-assignments-page">
-      <div class="mb-4">
-        <h1 class="text-xl font-bold text-gray-800">งานของฉัน</h1>
-        <p class="text-sm text-gray-500">หัวข้อการตรวจที่ได้รับมอบหมาย</p>
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">งานของฉัน</h1>
+          <p class="text-sm text-gray-500">หัวข้อการตรวจที่ได้รับมอบหมาย</p>
+        </div>
+        <button class="btn-pastel bg-white border border-gray-200 text-gray-600 px-3 py-1.5 text-xs flex items-center gap-1 shadow-sm hover:bg-gray-50" onclick="loadMyAssignments()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          ดึงข้อมูลล่าสุด
+        </button>
       </div>
       <div class="pastel-card overflow-x-auto">
         <table class="pastel-table min-w-[600px]">

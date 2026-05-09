@@ -35,9 +35,22 @@ var currentInspection = null;
 var currentAttachments = [];
 var pendingUploads = [];
 
+var activeCriterionTab = null;
+
 // --- Init ---
 document.addEventListener('DOMContentLoaded', function() {
-  navigateTo('landing');
+  var savedUser = localStorage.getItem('currentUser');
+  if (savedUser) {
+    try {
+      currentUser = JSON.parse(savedUser);
+    } catch(e){}
+  }
+  
+  if (currentUser) {
+    navigateTo('dashboard');
+  } else {
+    navigateTo('landing');
+  }
   loadLandingStats();
   document.getElementById('insp-date').valueAsDate = new Date();
 });
@@ -143,6 +156,7 @@ function handleLogin() {
       hideLoader();
       if (res && res.success && res.user) {
         currentUser = res.user;
+        localStorage.setItem('currentUser', JSON.stringify(res.user));
         showToast('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ ' + res.user.name, 'success');
         navigateTo('dashboard');
       } else {
@@ -165,6 +179,7 @@ function closeModal(id) {
 }
 function confirmLogout() {
   currentUser = null;
+  localStorage.removeItem('currentUser');
   currentInspection = null;
   pendingUploads = [];
   closeModal('logout-modal');
@@ -407,6 +422,9 @@ function viewInspection(id) {
 }
 
 function editInspection(id, readonly) {
+  if (currentInspection && currentInspection.inspection && currentInspection.inspection.id !== id) {
+    activeCriterionTab = null;
+  }
   showLoader('โหลดข้อมูล...');
   callApi('getInspectionDetail', {id: id})
     .then(function(res) {
@@ -425,12 +443,37 @@ function editInspection(id, readonly) {
     });
 }
 
+function refreshInspectionData() {
+  var id = document.getElementById('insp-id').value;
+  if (!id) return;
+  var isRead = document.getElementById('inspection-form-page').classList.contains('readonly-mode');
+  
+  showLoader('กำลังดึงข้อมูลล่าสุด...');
+  callApi('getInspectionDetail', {id: id})
+    .then(function(res) {
+      hideLoader();
+      if (res && res.success) {
+        currentInspection = res;
+        populateInspectionForm(res, isRead);
+        showToast('อัปเดตข้อมูลล่าสุดแล้ว', 'success');
+      } else {
+        showToast('ดึงข้อมูลไม่สำเร็จ', 'error');
+      }
+    })
+    .catch(function(err) {
+      hideLoader();
+      showToast('ดึงข้อมูลไม่สำเร็จ', 'error');
+    });
+}
+
 function openInspectionForm() {
+  activeCriterionTab = null;
   currentInspection = null;
   currentAttachments = [];
   pendingUploads = [];
   document.getElementById('insp-id').value = '';
   document.getElementById('insp-form-title').textContent = 'สร้างรายการตรวจสอบใหม่';
+  document.getElementById('btn-refresh-data').classList.add('hidden');
   document.getElementById('insp-status').value = 'draft';
   document.getElementById('insp-overall').value = '';
   document.getElementById('insp-findings').value = '';
@@ -450,6 +493,13 @@ function populateInspectionForm(res, readonly) {
   var insp = res.inspection || {};
   document.getElementById('insp-id').value = insp.id || '';
   document.getElementById('insp-form-title').textContent = readonly ? 'รายละเอียดการตรวจสอบ' : 'แก้ไขรายการตรวจสอบ';
+  
+  var btnRefresh = document.getElementById('btn-refresh-data');
+  if (btnRefresh) {
+    if (insp.id) btnRefresh.classList.remove('hidden');
+    else btnRefresh.classList.add('hidden');
+  }
+
   document.getElementById('insp-status').value = insp.status || 'draft';
   document.getElementById('insp-overall').value = insp.overallResult || '';
   document.getElementById('insp-findings').value = insp.summaryFindings || '';
@@ -549,9 +599,23 @@ function buildCriteriaUI(results, readonly) {
 
   criteriaList.forEach(function(c, idx) {
     var r = resultMap[c.no] || {};
-    var activeClass = idx === 0 ? 'active' : '';
-    var displayStyle = idx === 0 ? 'block' : 'none';
+    var activeClass = '';
+    var displayStyle = 'none';
+    if (activeCriterionTab) {
+      if (c.no === activeCriterionTab) {
+        activeClass = 'active';
+        displayStyle = 'block';
+      }
+    } else {
+      if (idx === 0) {
+        activeClass = 'active';
+        displayStyle = 'block';
+      }
+    }
     var canEdit = canEditCriterion(r, inspection);
+    var isLockedWorkflow = (r.status === 'submitted' || r.status === 'approved');
+    var isInputDisabled = isRead || !canEdit || isLockedWorkflow;
+
     var isAssigned = r.assignedTo && r.assignedTo !== '';
     var assignedLabel = isAssigned ? ('<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded ml-2">มอบหมายให้: ' + escapeHtml(getUserNameById(r.assignedTo)) + '</span>') : '';
     var statusBadge = '';
@@ -569,19 +633,19 @@ function buildCriteriaUI(results, readonly) {
       '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">' +
       '<div class="md:col-span-2">' +
       '<label class="pastel-label">ข้อเท็จจริงที่ตรวจพบ</label>' +
-      '<textarea id="crit-findings-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="สรุปข้อเท็จจริง..."' + (isRead || !canEdit ? ' disabled' : '') + '>' + escapeHtml(r.findings || '') + '</textarea>' +
+      '<textarea id="crit-findings-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="สรุปข้อเท็จจริง..."' + (isInputDisabled ? ' disabled' : '') + '>' + escapeHtml(r.findings || '') + '</textarea>' +
       '</div>' +
       '<div class="md:col-span-2">' +
       '<label class="pastel-label">ข้อเสนอความเห็น / วิธีการแก้ไข</label>' +
-      '<textarea id="crit-recs-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="เสนอแนะและวิธีแก้ไข..."' + (isRead || !canEdit ? ' disabled' : '') + '>' + escapeHtml(r.recommendations || '') + '</textarea>' +
+      '<textarea id="crit-recs-' + c.no + '" class="pastel-input w-full" rows="3" placeholder="เสนอแนะและวิธีแก้ไข..."' + (isInputDisabled ? ' disabled' : '') + '>' + escapeHtml(r.recommendations || '') + '</textarea>' +
       '</div>' +
       '<div>' +
       '<label class="pastel-label">ระยะเวลาที่ควรให้แก้ไข (วัน)</label>' +
-      '<input type="number" id="crit-deadline-' + c.no + '" class="pastel-input w-full" value="' + escapeHtml(r.deadlineDays || '') + '"' + (isRead || !canEdit ? ' disabled' : '') + '>' +
+      '<input type="number" id="crit-deadline-' + c.no + '" class="pastel-input w-full" value="' + escapeHtml(r.deadlineDays || '') + '"' + (isInputDisabled ? ' disabled' : '') + '>' +
       '</div>' +
       '<div>' +
       '<label class="pastel-label">ระดับความเสี่ยง</label>' +
-      '<select id="crit-risk-' + c.no + '" class="pastel-input w-full"' + (isRead || !canEdit ? ' disabled' : '') + '>' +
+      '<select id="crit-risk-' + c.no + '" class="pastel-input w-full"' + (isInputDisabled ? ' disabled' : '') + '>' +
       '<option value="low" ' + (r.riskLevel === 'low' ? 'selected' : '') + '>ต่ำ (Low)</option>' +
       '<option value="medium" ' + (r.riskLevel === 'medium' ? 'selected' : '') + '>ปานกลาง (Medium)</option>' +
       '<option value="high" ' + (r.riskLevel === 'high' ? 'selected' : '') + '>สูง (High)</option>' +
@@ -589,7 +653,7 @@ function buildCriteriaUI(results, readonly) {
       '</div>' +
       '<div>' +
       '<label class="pastel-label">สถานะ</label>' +
-      '<select id="crit-status-' + c.no + '" class="pastel-input w-full"' + (isRead || !canEdit ? ' disabled' : '') + '>' +
+      '<select id="crit-status-' + c.no + '" class="pastel-input w-full"' + (isInputDisabled ? ' disabled' : '') + '>' +
       '<option value="pending" ' + (r.status === 'pending' ? 'selected' : '') + '>รอดำเนินการ</option>' +
       '<option value="passed" ' + (r.status === 'passed' ? 'selected' : '') + '>ผ่าน</option>' +
       '<option value="issue" ' + (r.status === 'issue' ? 'selected' : '') + '>พบปัญหา</option>' +
@@ -662,6 +726,7 @@ function getUserNameById(userId) {
 }
 
 function switchCriteriaTab(cno) {
+  activeCriterionTab = cno;
   document.querySelectorAll('.criteria-tab').forEach(function(t) { t.classList.remove('active'); });
   var tab = document.querySelector('.criteria-tab[data-cno="' + cno + '"]');
   if (tab) tab.classList.add('active');
@@ -694,15 +759,24 @@ function saveInspection() {
 
   var results = [];
   criteriaList.forEach(function(c) {
+    var existingResult = currentInspection && currentInspection.results ? (currentInspection.results.find(function(r){ return r.criterionNo === c.no; }) || {}) : {};
+    var currentStatus = existingResult.status || 'pending';
+    var uiStatus = document.getElementById('crit-status-' + c.no) ? document.getElementById('crit-status-' + c.no).value : 'pending';
+    
+    var finalStatus = uiStatus;
+    if (['assigned', 'submitted', 'approved', 'rejected'].indexOf(currentStatus) !== -1) {
+      finalStatus = currentStatus;
+    }
+
     results.push({
-      id: currentInspection && currentInspection.results ? (currentInspection.results.find(function(r){ return r.criterionNo === c.no; }) || {}).id : '',
+      id: existingResult.id || '',
       criterionNo: c.no,
       criterionName: c.name,
       findings: document.getElementById('crit-findings-' + c.no) ? document.getElementById('crit-findings-' + c.no).value : '',
       recommendations: document.getElementById('crit-recs-' + c.no) ? document.getElementById('crit-recs-' + c.no).value : '',
       deadlineDays: document.getElementById('crit-deadline-' + c.no) ? document.getElementById('crit-deadline-' + c.no).value : '',
       riskLevel: document.getElementById('crit-risk-' + c.no) ? document.getElementById('crit-risk-' + c.no).value : 'low',
-      status: document.getElementById('crit-status-' + c.no) ? document.getElementById('crit-status-' + c.no).value : 'pending'
+      status: finalStatus
     });
   });
 
@@ -1079,7 +1153,6 @@ function loadAssignCriteriaList() {
 }
 
 function assignCriterion(criterionNo, userId) {
-  if (!userId) return;
   var inspectionId = document.getElementById('assign-inspection-id').value;
   var userName = getUserNameById(userId);
   showLoader('กำลังมอบหมาย...');
@@ -1170,19 +1243,29 @@ function submitCriterionResult(criterionNo) {
   if (!result) return;
   if (!currentUser) return;
 
-  var findings = document.getElementById('crit-findings-' + criterionNo) ? document.getElementById('crit-findings-' + criterionNo).value : '';
+  var findingsStr = document.getElementById('crit-findings-' + criterionNo) ? document.getElementById('crit-findings-' + criterionNo).value : '';
   var recommendations = document.getElementById('crit-recs-' + criterionNo) ? document.getElementById('crit-recs-' + criterionNo).value : '';
   var deadlineDays = document.getElementById('crit-deadline-' + criterionNo) ? document.getElementById('crit-deadline-' + criterionNo).value : '';
   var riskLevel = document.getElementById('crit-risk-' + criterionNo) ? document.getElementById('crit-risk-' + criterionNo).value : 'low';
+
+  var evalStatus = document.getElementById('crit-status-' + criterionNo) ? document.getElementById('crit-status-' + criterionNo).value : '';
+  var statusPrefix = '';
+  if (evalStatus === 'passed') statusPrefix = '[ผ่าน] ';
+  if (evalStatus === 'issue') statusPrefix = '[พบปัญหา] ';
+  
+  if (statusPrefix && findingsStr.indexOf('[ผ่าน]') === -1 && findingsStr.indexOf('[พบปัญหา]') === -1) {
+    findingsStr = statusPrefix + findingsStr;
+  }
 
   showLoader('กำลังส่งผล...');
   callApi('submitCriteriaResult', {
     resultId: result.id,
     userId: currentUser.id,
-    findings: findings,
+    findings: findingsStr,
     recommendations: recommendations,
     deadlineDays: deadlineDays,
-    riskLevel: riskLevel
+    riskLevel: riskLevel,
+    evalStatus: evalStatus
   })
     .then(function(res) {
       hideLoader();
