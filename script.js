@@ -388,8 +388,10 @@ function renderInspections() {
     if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'inspector')) {
       html += '<button class="text-slate-700 text-sm hover:underline mr-2" onclick="editInspection(\'' + escapeHtml(item.id || '') + '\')">แก้ไข</button>';
     }
-    if (isLeader || currentUser.role === 'admin') {
+    if (currentUser && currentUser.role === 'admin') {
       html += '<button class="text-blue-500 text-sm hover:underline mr-2" onclick="openTeamManagement(\'' + escapeHtml(item.id || '') + '\')">ทีม</button>';
+    }
+    if (isLeader) {
       html += '<button class="text-purple-500 text-sm hover:underline mr-2" onclick="openAssignCriteria(\'' + escapeHtml(item.id || '') + '\')">มอบหมาย</button>';
     }
     if (currentUser && currentUser.role === 'admin') {
