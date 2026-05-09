@@ -643,9 +643,22 @@ function buildCriteriaUI(results, readonly) {
 }
 
 function getUserNameById(userId) {
-  if (!userId || !usersData) return userId;
-  var u = usersData.find(function(x) { return x.id === userId; });
-  return u ? u.name : userId;
+  if (!userId) return userId;
+  // 1. Try usersData first
+  if (usersData && usersData.length > 0) {
+    var u = usersData.find(function(x) { return x.id === userId; });
+    if (u) return u.name;
+  }
+  // 2. Fallback to currentInspection.team
+  if (currentInspection && currentInspection.team && currentInspection.team.length > 0) {
+    var t = currentInspection.team.find(function(x) { return x.userId === userId; });
+    if (t) return t.userName;
+  }
+  // 3. Fallback to currentInspection.inspection inspectorName
+  if (currentInspection && currentInspection.inspection && currentInspection.inspection.inspectorId === userId) {
+    return currentInspection.inspection.inspectorName || userId;
+  }
+  return userId;
 }
 
 function switchCriteriaTab(cno) {
